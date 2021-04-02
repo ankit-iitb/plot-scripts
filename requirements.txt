@@ -1,0 +1,8 @@
+numpy
+pandas
+backports-datetime-fromisoformat
+plotnine
+jinja2
+plumbum
+altair
+argparse
