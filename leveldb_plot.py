@@ -64,33 +64,28 @@ class theme_my538(theme_gray):
                 strip_background=element_rect(size=0)),
             inplace=True)
 
-def throughput_vs_cores(df):
+def throughput_vs_cores(df_linux, df_bespin):
     # Manual copy to reuse other plot scripts
-    df_linux = df.copy()
-    df_bespin = df.copy()
-    df_linux['cores'] = df_linux['cores']
-    df_linux['tps'] = df_linux['linux']
+    df_linux['cores'] = df_linux['ncores']
+    df_linux['tps'] = df_linux['operations']
     df_linux['bench'] = 'Linux Tmpfs'
-    del df_linux['linux']
-    del df_linux['bespin']
 
-    df_bespin['cores'] = df_bespin['cores']
-    df_bespin['tps'] = df_bespin['bespin']
+    df_bespin['cores'] = df_bespin['ncores']
+    df_bespin['tps'] = df_bespin['operations']
     df_bespin['bench'] = 'NrOS NrFS'
-    del df_bespin['linux']
-    del df_bespin['bespin']
+
     benchmarks = pd.concat([df_linux, df_bespin])
 
     #print(benchmarks)
 
-    xskip = int(29/7)
+    xskip = int(32/4)
     p = ggplot(data=benchmarks,
                 mapping=aes(x='cores',
                             y='tps',
                             color='bench',
                             shape='bench')) + \
         theme_my538() + \
-        coord_cartesian(ylim=(0, 11_50_000), xlim = (0.5, 28.5), expand=False) + \
+        coord_cartesian(ylim=(0, 1_300_000), xlim = (0.5, 32.5), expand=False) + \
         labs(y="Throughput [Kelems/s]") + \
         theme(legend_position=(0.50, 0.95), legend_title=element_blank(), legend_direction='horizontal') + \
         scale_x_continuous(breaks=[1] + list(range(xskip, 513, xskip)), name='# Threads') + \
@@ -104,11 +99,17 @@ def throughput_vs_cores(df):
     p.save("leveldb.pdf", dpi=300, width=PLOT_WIDTH, height=PLOT_HEIGHT, units=PLOT_SIZE_UNIT)
 
 if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print(
+            "Usage: <linux leveldb csv> <bespin leveldb csv>.")
+        exit(0)
+
     warnings.filterwarnings('ignore')
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
     pd.set_option('display.expand_frame_repr', True)
 
-    df=pd.read_csv("leveldb.csv")
-    throughput_vs_cores(df)
+    df_linux = pd.read_csv(sys.argv[1])
+    df_bespin = pd.read_csv(sys.argv[2])
+    throughput_vs_cores(df_linux, df_bespin)
