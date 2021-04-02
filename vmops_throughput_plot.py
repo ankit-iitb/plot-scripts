@@ -110,7 +110,7 @@ def plot_scalability(filename, machine, benchmark_name, df_linux,
             benchmark_bespin = benchmark_bespin.groupby(['ncores', 'benchmark', 'memsize', 'os', 'git_rev'], as_index=False).agg(
                 {'operations': 'sum', 'thread_id': 'count', 'duration': 'max'})
             benchmark_bespin['tps'] = (
-                benchmark_bespin['operations'] / ((benchmark_bespin['duration'] - 1000) * MS_TO_SEC)).fillna(0.0).astype(int)
+                benchmark_bespin['operations'] / (benchmark_bespin['duration'] * MS_TO_SEC)).fillna(0.0).astype(int)
             benchmark_bespin['tps_std'] = benchmark_bespin['tps']
             benchmark_bespin = benchmark_bespin.groupby(
                 ['ncores', 'benchmark', 'memsize', 'os'], as_index=False).agg({'tps': 'mean', 'tps_std': 'std'})
