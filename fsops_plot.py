@@ -66,14 +66,13 @@ class theme_my538(theme_gray):
                 panel_grid_major=element_line(
                     color='#D5D5D5', linetype='solid', size=0.5),
                 panel_grid_minor=element_blank(),
-                panel_spacing=0.10,
+                panel_spacing=0.15,
                 plot_background=element_rect(
                     fill=bgcolor, color=bgcolor, size=1),
                 strip_background=element_rect(size=0)),
             inplace=True)
 
 def throughput_vs_cores(machine, df_linux, df_bespin, write_ratios=[0, 10, 60, 100]):
-    open_file=[1, 16]
     data_set = []
     if df_linux is not None and df_bespin is not None:
         df_linux['benchmark'] = df_linux.apply(lambda row: "{}".format(
@@ -84,11 +83,12 @@ def throughput_vs_cores(machine, df_linux, df_bespin, write_ratios=[0, 10, 60, 1
         df_bespin['bench'] = 'NrOS NrFS'
 
         for open_files in df_bespin.open_files.unique():
+            data_set = []
             for writeratio in df_linux.write_ratio.unique():
                 benchmark = df_linux.loc[(df_linux['benchmark'] == "mix") & (df_linux['ncores'] <= machine['cores'])
                                         & (df_linux['write_ratio'] == writeratio) & (df_linux['open_files'] == open_files)]
 
-                if len(benchmark) == 0 or writeratio not in write_ratios or open_files not in open_file:
+                if len(benchmark) == 0 or writeratio not in write_ratios:
                     continue
 
                 benchmark = benchmark.groupby(['write_ratio', 'ncores', 'bench', 'open_files'], as_index=False).agg(
@@ -103,33 +103,34 @@ def throughput_vs_cores(machine, df_linux, df_bespin, write_ratios=[0, 10, 60, 1
 
                 benchmark_bespin['tps'] = benchmark_bespin['operations'] / benchmark_bespin['duration']
                 data_set.append(benchmark_bespin)
+                #print(benchmark)
+                #print(benchmark_bespin)
 
             benchmarks = pd.concat(data_set)
+            #print(benchmarks)
 
-        #print(benchmarks)
-        xskip = int(machine['cores']/8)
-        p = ggplot(data=benchmarks,
-                    mapping=aes(x='ncores',
-                                y='tps',
-                                color='bench',
-                                shape='bench')) + \
-            theme_my538() + \
-            coord_cartesian(ylim=(0, None), expand=False) + \
-            labs(y="Throughput [Melems/s]") + \
-            theme(legend_position='top', legend_title=element_blank()) + \
-            scale_x_continuous(breaks=[1] + list(range(xskip, 513, xskip)), name='# Threads') + \
-            scale_y_continuous(labels=lambda lst: ["{:,}".format(x / 1_000_000) for x in lst]) + \
-            scale_color_brewer(type='qual', palette='Set2') + \
-            geom_point() + \
-            geom_line() + \
-            facet_grid(["write_ratio", "open_files"], scales="free_y") + \
-            guides(color=guide_legend(nrow=1))
+            xskip = int(machine['cores']/8)
+            p = ggplot(data=benchmarks,
+                        mapping=aes(x='ncores',
+                                    y='tps',
+                                    color='bench',
+                                    shape='bench')) + \
+                theme_my538() + \
+                coord_cartesian(ylim=(0, None), expand=False) + \
+                labs(y="Throughput [Melems/s]") + \
+                theme(legend_position='top', legend_title=element_blank()) + \
+                scale_x_continuous(breaks=[1] + list(range(xskip, 513, xskip)), name='# Threads') + \
+                scale_y_continuous(labels=lambda lst: ["{:,}".format(x / 1_000_000) for x in lst]) + \
+                scale_color_brewer(type='qual', palette='Set2') + \
+                geom_point() + \
+                geom_line() + \
+                facet_grid(["write_ratio", "open_files"], scales="free_y") + \
+                guides(color=guide_legend(nrow=1))
 
-        p.save("{}-throughput-vs-cores.png".format(machine['name']),
-                dpi=300, width=2.1*PLOT_WIDTH, height=2.7*PLOT_HEIGHT, units=PLOT_SIZE_UNIT)
-        p.save("{}-throughput-vs-cores.pdf".format(machine['name']),
-                dpi=300, width=2.7*PLOT_WIDTH, height=2.7*PLOT_HEIGHT, units=PLOT_SIZE_UNIT)
-
+            p.save("{}-{}-files-throughput-vs-cores.png".format(machine['name'], open_files),
+                    dpi=300, width=0.5*PLOT_WIDTH, height=2.4*PLOT_HEIGHT, units=PLOT_SIZE_UNIT)
+            p.save("{}-{}-files-throughput-vs-cores.pdf".format(machine['name'], open_files),
+                    dpi=300, width=0.5*PLOT_WIDTH, height=2.4*PLOT_HEIGHT, units=PLOT_SIZE_UNIT)
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
